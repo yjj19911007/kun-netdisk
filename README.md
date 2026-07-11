@@ -2,7 +2,7 @@
   <h1>☁️ Kun 网盘</h1>
   <p>轻量级私有文件共享服务 · 支持上传/下载/分享链接</p>
 
-  <a href="https://railway.app/template/LqDB3S?referralCode=kun">
+  <a href="https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fyjj19911007%2Fkun-netdisk">
     <img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40">
   </a>
 </div>
@@ -20,7 +20,7 @@
 
 ## 🚀 一键部署（推荐）
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/LqDB3S?referralCode=kun)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fyjj19911007%2Fkun-netdisk)
 
 点击上方按钮 → 登录 GitHub → 点 **Deploy** → 等 2 分钟即上线。
 
