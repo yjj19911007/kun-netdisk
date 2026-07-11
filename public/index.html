@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kun 网盘</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+a { color: #1a73e8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ─── 登录页 ─── */
+#loginPage { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.login-card { background: white; border-radius: 16px; padding: 40px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.login-card h1 { text-align: center; font-size: 28px; margin-bottom: 8px; }
+.login-card .sub { text-align: center; color: #666; margin-bottom: 28px; font-size: 14px; }
+.login-card input { width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px; margin-bottom: 16px; outline: none; transition: border .2s; }
+.login-card input:focus { border-color: #667eea; }
+.login-card button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.login-card button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,.4); }
+.login-card .error { background: #fdecea; color: #c62828; padding: 10px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none; }
+
+/* ─── 主界面 ─── */
+#appPage { display: none; }
+.topbar { background: white; border-bottom: 1px solid #e0e0e0; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.topbar .user-area { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+.topbar .user-area button { background: none; border: 1px solid #ddd; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.topbar .user-area button:hover { background: #f5f5f5; }
+
+.container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+
+/* ─── 统计栏 ─── */
+.stats { display: flex; gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border-radius: 12px; padding: 20px 24px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.stat-card .num { font-size: 28px; font-weight: 700; color: #1a73e8; }
+.stat-card .label { font-size: 13px; color: #666; margin-top: 4px; }
+
+/* ─── 上传区域 ─── */
+.upload-zone { background: white; border: 2px dashed #ccc; border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: border .2s, background .2s; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.upload-zone:hover, .upload-zone.dragover { border-color: #667eea; background: #f8f9ff; }
+.upload-zone .icon { font-size: 48px; margin-bottom: 8px; }
+.upload-zone .text { font-size: 16px; color: #444; }
+.upload-zone .hint { font-size: 13px; color: #999; margin-top: 4px; }
+
+/* ─── 文件列表 ─── */
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.toolbar h2 { font-size: 18px; }
+.toolbar .actions { display: flex; gap: 8px; }
+.toolbar .actions button { background: white; border: 1px solid #ddd; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.toolbar .actions button:hover { background: #f5f5f5; }
+.toolbar .actions button.danger { color: #d32f2f; border-color: #ffcdd2; }
+.toolbar .actions button.danger:hover { background: #ffebee; }
+
+.file-list { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.file-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+.file-item:last-child { border-bottom: none; }
+.file-item:hover { background: #f8f9ff; }
+.file-item .icon { font-size: 28px; margin-right: 16px; flex-shrink: 0; }
+.file-item .info { flex: 1; min-width: 0; }
+.file-item .info .name { font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-item .info .meta { font-size: 12px; color: #999; margin-top: 2px; }
+.file-item .actions { display: flex; gap: 8px; flex-shrink: 0; }
+.file-item .actions button { background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 13px; color: #555; }
+.file-item .actions button:hover { background: #eee; }
+.file-item .actions .share-on { color: #1a73e8; }
+.file-item .actions .del { color: #d32f2f; }
+.file-item .badge-share { background: #e8f0fe; color: #1a73e8; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-state .icon { font-size: 64px; margin-bottom: 12px; }
+
+/* ─── Toast ─── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #323232; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 1000; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.error { background: #c62828; }
+.toast.success { background: #2e7d32; }
+
+/* ─── 进度条 ─── */
+.progress-bar { height: 4px; background: #e0e0e0; border-radius: 2px; margin-top: 12px; overflow: hidden; display: none; }
+.progress-bar .fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); width: 0%; transition: width .3s; border-radius: 2px; }
+
+/* ─── 响应式 ─── */
+@media (max-width: 640px) {
+  .login-card { width: 90%; padding: 24px; }
+  .stats { flex-direction: column; }
+  .file-item { flex-wrap: wrap; }
+  .file-item .actions { margin-top: 8px; width: 100%; justify-content: flex-end; }
+  .topbar { padding: 0 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="loginPage">
+  <div class="login-card">
+    <h1>☁️ Kun 网盘</h1>
+    <p class="sub">登录以管理你的文件</p>
+    <div class="error" id="loginError"></div>
+    <input type="text" id="loginUser" placeholder="用户名" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="密码" autocomplete="current-password">
+    <button onclick="login()">登 录</button>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="appPage">
+  <div class="topbar">
+    <div class="brand">☁️ Kun 网盘</div>
+    <div class="user-area">
+      <span id="userInfo"></span>
+      <button onclick="changePassword()">修改密码</button>
+      <button onclick="logout()">退出登录</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 统计 -->
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="statFiles">0</div><div class="label">文件数</div></div>
+      <div class="stat-card"><div class="num" id="statSize">0 B</div><div class="label">总大小</div></div>
+    </div>
+
+    <!-- 上传区 -->
+    <div class="upload-zone" id="uploadZone">
+      <div class="icon">📤</div>
+      <div class="text">点击选择文件 或 拖拽文件到此处</div>
+      <div class="hint">支持单个文件最大 1GB</div>
+      <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+    </div>
+    <input type="file" id="fileInput" multiple style="display:none">
+
+    <!-- 文件列表 -->
+    <div class="toolbar">
+      <h2>📂 我的文件</h2>
+      <div class="actions">
+        <button onclick="refreshList()">🔄 刷新</button>
+      </div>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="empty-state">
+        <div class="icon">📁</div>
+        <div>暂无文件，上传一个试试吧</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── 状态 ───────────────────────────────────────────
+const API = '';
+let token = localStorage.getItem('kun_netdisk_token') || '';
+
+// ─── Toast ──────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type + ' show';
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── 格式化大小 ─────────────────────────────────────
+function fmtSize(bytes) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── API 调用 ──────────────────────────────────────
+async function api(method, url, body) {
+  const headers = { 'Authorization': 'Bearer ' + token };
+  if (body && !(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const res = await fetch(API + url, {
+    method,
+    headers,
+    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return data;
+}
+
+// ─── 登录 / 退出 ───────────────────────────────────
+async function login() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!username || !password) { errEl.textContent = '请输入用户名和密码'; errEl.style.display = 'block'; return; }
+  try {
+    const res = await fetch(API + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    token = data.token;
+    localStorage.setItem('kun_netdisk_token', token);
+    showApp();
+    toast('登录成功', 'success');
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function logout() {
+  token = '';
+  localStorage.removeItem('kun_netdisk_token');
+  document.getElementById('appPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginPass').value = '';
+}
+
+// ─── 修改密码 ──────────────────────────────────────
+async function changePassword() {
+  const oldPw = prompt('请输入旧密码：');
+  if (!oldPw) return;
+  const newPw = prompt('请输入新密码（至少 4 位）：');
+  if (!newPw) return;
+  const confirm = prompt('请再次输入新密码：');
+  if (newPw !== confirm) { toast('两次密码不一致', 'error'); return; }
+  try {
+    await api('POST', '/api/change-password', { oldPassword: oldPw, newPassword: newPw });
+    toast('密码修改成功', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── 显示主界面 ─────────────────────────────────────
+function showApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appPage').style.display = 'block';
+  document.getElementById('userInfo').textContent = '👤 ' + (localStorage.getItem('kun_netdisk_user') || '');
+  refreshList();
+  loadStats();
+}
+
+// ─── 统计 ──────────────────────────────────────────
+async function loadStats() {
+  try {
+    const data = await api('GET', '/api/status');
+    document.getElementById('statFiles').textContent = data.totalFiles;
+    document.getElementById('statSize').textContent = fmtSize(data.totalSize);
+  } catch {}
+}
+
+// ─── 刷新文件列表 ──────────────────────────────────
+async function refreshList() {
+  const list = document.getElementById('fileList');
+  try {
+    const data = await api('GET', '/api/files');
+    if (!data.files || data.files.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">📁</div><div>暂无文件，上传一个试试吧</div></div>';
+      return;
+    }
+    let html = '';
+    for (const f of data.files) {
+      const ext = f.originalName.split('.').pop().toLowerCase();
+      const icon = getFileIcon(ext);
+      const shareBadge = f.shared ? '<span class="badge-share">🔗 已分享</span>' : '';
+      const shareBtn = f.shared
+        ? `<button class="share-on" onclick="toggleShare('${f.id}')">🔗 取消分享</button>`
+        : `<button onclick="toggleShare('${f.id}')">🔗 分享</button>`;
+      html += `<div class="file-item">
+        <div class="icon">${icon}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(f.originalName)}${shareBadge}</div>
+          <div class="meta">${fmtSize(f.size)} · ${fmtDate(f.uploadedAt)}</div>
+        </div>
+        <div class="actions">
+          ${shareBtn}
+          <button onclick="downloadFile('${f.id}', '${escapeHtml(f.originalName)}')">⬇️ 下载</button>
+          <button class="del" onclick="deleteFile('${f.id}')">🗑️ 删除</button>
+        </div>
+      </div>`;
+    }
+    list.innerHTML = html;
+    loadStats();
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state" style="color:#c62828;">❌ ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function getFileIcon(ext) {
+  const icons = {
+    pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗',
+    ppt: '📙', pptx: '📙', zip: '📦', rar: '📦', '7z': '📦',
+    gz: '📦', tar: '📦', mp3: '🎵', wav: '🎵', flac: '🎵',
+    mp4: '🎬', avi: '🎬', mkv: '🎬', mov: '🎬',
+    jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', svg: '🖼️', webp: '🖼️',
+    txt: '📄', json: '📄', xml: '📄', csv: '📄', md: '📝',
+    js: '⚡', ts: '⚡', py: '🐍', go: '🔵', rs: '🦀',
+    html: '🌐', css: '🎨', exe: '⚙️', dmg: '💿', app: '📱',
+  };
+  return icons[ext] || '📎';
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── 上传 ──────────────────────────────────────────
+async function uploadFiles(files) {
+  if (!files || files.length === 0) return;
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+
+  const formData = new FormData();
+  for (const f of files) formData.append('files', f);
+
+  try {
+    // Use XMLHttpRequest for upload progress
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', API + '/api/files/upload');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        fill.style.width = (e.loaded / e.total * 100) + '%';
+      }
+    };
+
+    const result = await new Promise((resolve, reject) => {
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+          else reject(new Error(data.error || '上传失败'));
+        } catch { reject(new Error('解析响应失败')); }
+      };
+      xhr.onerror = () => reject(new Error('网络错误'));
+      xhr.send(formData);
+    });
+
+    fill.style.width = '100%';
+    toast(`成功上传 ${result.files.length} 个文件`, 'success');
+    refreshList();
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    setTimeout(() => { bar.style.display = 'none'; fill.style.width = '0%'; }, 1000);
+  }
+}
+
+// ─── 文件操作 ──────────────────────────────────────
+async function toggleShare(id) {
+  try {
+    const data = await api('POST', `/api/files/${id}/toggle-share`);
+    toast(data.file.shared ? '已开启分享' : '已关闭分享', 'success');
+    refreshList();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteFile(id) {
+  if (!confirm('确定要删除这个文件吗？')) return;
+  try {
+    await api('DELETE', `/api/files/${id}`);
+    toast('已删除', 'success');
+    refreshList();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function downloadFile(id, name) {
+  try {
+    const url = API + '/api/files/' + id + '/download';
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || '下载失败');
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── 上传区域交互 ───────────────────────────────────
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.classList.remove('dragover');
+});
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  uploadFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', () => {
+  uploadFiles(fileInput.files);
+  fileInput.value = '';
+});
+
+// ─── 键盘登录 ──────────────────────────────────────
+document.getElementById('loginPass').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') login();
+});
+document.getElementById('loginUser').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('loginPass').focus();
+});
+
+// ─── 初始化 ─────────────────────────────────────────
+(function init() {
+  if (token) {
+    // 验证 token 是否有效
+    fetch(API + '/api/status', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(r => {
+      if (r.ok) {
+        r.json().then(d => {
+          localStorage.setItem('kun_netdisk_user', d.username);
+          showApp();
+        });
+      } else {
+        token = '';
+        localStorage.removeItem('kun_netdisk_token');
+        document.getElementById('loginPage').style.display = 'flex';
+      }
+    }).catch(() => {
+      document.getElementById('loginPage').style.display = 'flex';
+    });
+  } else {
+    document.getElementById('loginPage').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>
