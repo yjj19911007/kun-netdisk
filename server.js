@@ -61,12 +61,12 @@ function saveMeta(meta) {
 const app = express();
 app.use(express.json());
 
-// 鈹€鈹€鈹€ 鍋ュ悍妫€鏌ワ紙涓嶉渶瑕佺櫥褰曪級 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ─── 健康检查（不需要登录） ────────────────────────
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// 鈹€鈹€鈹€ Multer 閰嶇疆 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ─── Multer 配置 ────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, CONFIG.uploadDir),
   filename: (req, file, cb) => {
