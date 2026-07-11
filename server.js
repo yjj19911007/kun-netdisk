@@ -229,7 +229,7 @@ app.get('/api/files/:id/download', optionalAuth, (req, res) => {
     return res.status(404).json({ error: '鏂囦欢宸茶鍒犻櫎' });
   }
   const safeName = encodeURIComponent(file.originalName);
-  res.setHeader('Content-Disposition', 'attachment; filename*=UTF-8' + safeName);
+  res.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + safeName);
   res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
   res.sendFile(filePath);
 });
